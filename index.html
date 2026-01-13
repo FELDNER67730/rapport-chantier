@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Rapport de Chantier - Feldner Réseaux</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #e2e8f0 0%, #bfdbfe 100%); min-height: 100vh; padding: 16px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .status-bar { background: #dcfce7; border: 2px solid #86efac; padding: 16px; border-radius: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .status-bar.offline { background: #fed7aa; border-color: #fb923c; }
+        .card { background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 16px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #3b82f6; padding-bottom: 16px; margin-bottom: 24px; }
+        h1 { font-size: 28px; font-weight: bold; }
+        h2 { font-size: 22px; font-weight: bold; margin-bottom: 16px; }
+        .section { padding: 24px; border-radius: 12px; margin-bottom: 24px; border: 2px solid; }
+        .section-blue { background: #dbeafe; border-color: #93c5fd; }
+        .section-green { background: #dcfce7; border-color: #86efac; }
+        .section-orange { background: #fed7aa; border-color: #fdba74; }
+        .section-red { background: #fecaca; border-color: #fca5a5; }
+        .section-purple { background: #e9d5ff; border-color: #c084fc; }
+        input, select, textarea { width: 100%; padding: 12px 16px; font-size: 16px; border: 2px solid #d1d5db; border-radius: 8px; margin-top: 8px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; }
+        label { display: block; font-weight: 600; font-size: 14px; margin-top: 12px; }
+        button { padding: 12px 20px; font-size: 16px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-success { background: #22c55e; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-full { width: 100%; padding: 20px; font-size: 20px; }
+        .task-box { background: white; padding: 20px; border-radius: 12px; border: 2px solid #86efac; margin-bottom: 16px; }
+        .material-item { display: grid; grid-template-columns: 2fr 1fr 1fr 2fr auto; gap: 8px; margin-bottom: 12px; align-items: center; }
+        .material-box { background: #f0fdf4; padding: 16px; border-radius: 8px; border: 1px solid #86efac; margin-top: 16px; }
+        .equipment-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .equipment-btn { padding: 16px; background: white; border: 2px solid #d1d5db; border-radius: 8px; font-weight: 500; }
+        .equipment-btn.active { background: #f97316; color: white; border-color: #f97316; }
+        .report-item { background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #d1d5db; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .hidden { display: none; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .small-text { font-size: 12px; color: #6b7280; }
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .material-item { grid-template-columns: 1fr; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="statusBar" class="status-bar">
+            <div><span id="statusIcon">📶</span> <strong id="statusText">WiFi</strong></div>
+            <div id="pendingReports"></div>
+        </div>
+
+        <div id="savedReportsList" class="card hidden"></div>
+
+        <div class="card">
+            <div class="header">
+                <h1>📋 Rapport de Chantier</h1>
+                <button class="btn-danger" onclick="resetForm()">🔄</button>
+            </div>
+
+            <div class="section section-blue">
+                <h2>👤 Informations générales</h2>
+                <div class="grid-2">
+                    <div>
+                        <label>Date *</label>
+                        <input type="date" id="date">
+                    </div>
+                    <div>
+                        <label>Chef de chantier *</label>
+                        <input type="text" id="chiefName" placeholder="Nom et prénom">
+                    </div>
+                </div>
+                <label>📍 Adresse du chantier *</label>
+                <input type="text" id="siteAddress" placeholder="Adresse complète">
+                <div class="grid-2">
+                    <div>
+                        <label>☁️ Météo</label>
+                        <select id="weather">
+                            <option>Ensoleillé</option>
+                            <option>Nuageux</option>
+                            <option>Pluvieux</option>
+                            <option>Orageux</option>
+                            <option>Neigeux</option>
+                            <option>Brouillard</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section section-green">
+                <div class="flex-between">
+                    <h2>📦 Tâches et matériaux</h2>
+                    <button class="btn-success" onclick="addTask()">➕ Ajouter</button>
+                </div>
+                <div id="tasksList"></div>
+            </div>
+
+            <div class="section section-orange">
+                <h2>🔧 Matériel en location</h2>
+                <div class="equipment-grid" id="equipmentGrid"></div>
+                <label>Autre matériel (précisez)</label>
+                <textarea id="otherEquipment" rows="3" placeholder="Autre matériel en location..."></textarea>
+            </div>
+
+            <div class="section section-red">
+                <h2>📝 Informations diverses et sécurité</h2>
+                <textarea id="safetyNotes" rows="6" placeholder="Remarques, incidents, consignes de sécurité..."></textarea>
+                <label>📷 Nombre de photos prises</label>
+                <input type="number" id="photoCount" value="0" min="0">
+                <p class="small-text" style="margin-top: 8px;">Note : Vous devrez joindre les photos manuellement à l'email</p>
+            </div>
+
+            <div class="section section-purple">
+                <h2>✍️ Signature et envoi</h2>
+                <label>Signature (nom complet) *</label>
+                <input type="text" id="signature" placeholder="Votre nom complet">
+                <button class="btn-primary btn-full" style="margin-top: 24px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);" onclick="saveReport()">
+                    💾 Sauvegarder le rapport (hors ligne)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const materials = ['Sable 0/4', 'Concassé 0/4', 'Concassé 0/20', 'Concassé 0/31.5', 'Recyclé 0/20', 'Recyclé 0/25', 'Recyclé 0/40', 'Terre Végétal', 'Tout Venant 0/63', 'Béton 150', 'Béton 250', 'Béton 350', 'Enrobés 0/8', 'Enrobés 0/11', 'Déblais'];
+        const origins = ['DEPOT - Châtenois', 'LEONHART – Sélestat', 'VVK – Ebersheim', 'NEXSTONE – Bischoffsheim', 'NEXTSONE – Schirmeck', 'LRT – Turckheim', 'ALTER – Bennwihr', 'JEHL – Artolsheim', 'ELBEN – Niederhergheim', 'EST ENROBES – Sélestat', 'NOUVELLE CARRIERE ALSACE - Metzeral'];
+        const equipment = ['Échafaudage', 'Bétonnière', 'Pelleteuse', 'Mini-pelle', 'Compacteur', 'Marteau-piqueur', 'Nacelle élévatrice', 'Grue', 'Camion benne', 'Compresseur', 'Groupe électrogène', 'Scie à béton', 'Meuleuse', 'Pompe à eau', 'Autre'];
+        
+        let tasks = [{materials: [{}]}];
+        let selectedEquipment = [];
+        let isOnline = navigator.onLine;
+
+        function init() {
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            renderEquipmentGrid();
+            renderTasks();
+            updateStatus();
+            loadSavedReports();
+            window.addEventListener('online', () => { isOnline = true; updateStatus(); });
+            window.addEventListener('offline', () => { isOnline = false; updateStatus(); });
+        }
+
+        function updateStatus() {
+            const bar = document.getElementById('statusBar');
+            const icon = document.getElementById('statusIcon');
+            const text = document.getElementById('statusText');
+            if (isOnline) {
+                bar.className = 'status-bar';
+                icon.textContent = '📶';
+                text.textContent = '✅ WiFi';
+            } else {
+                bar.className = 'status-bar offline';
+                icon.textContent = '📵';
+                text.textContent = '📵 Hors ligne';
+            }
+            const saved = JSON.parse(localStorage.getItem('savedReports') || '[]');
+            document.getElementById('pendingReports').innerHTML = saved.length > 0 
+                ? `<span style="font-weight:600">${saved.length} en attente</span> <button class="btn-primary" style="padding:4px 12px;margin-left:8px" onclick="toggleSavedReports()">${document.getElementById('savedReportsList').classList.contains('hidden') ? 'Voir' : 'Masquer'}</button>`
+                : '';
+        }
+
+        function renderEquipmentGrid() {
+            const grid = document.getElementById('equipmentGrid');
+            grid.innerHTML = equipment.map(eq => 
+                `<button class="equipment-btn" onclick="toggleEquipment('${eq}')" id="eq_${eq.replace(/\s/g,'_')}">${eq}</button>`
+            ).join('');
+        }
+
+        function toggleEquipment(eq) {
+            const idx = selectedEquipment.indexOf(eq);
+            if (idx > -1) {
+                selectedEquipment.splice(idx, 1);
+            } else {
+                selectedEquipment.push(eq);
+            }
+            document.getElementById('eq_' + eq.replace(/\s/g,'_')).classList.toggle('active');
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('tasksList');
+            list.innerHTML = tasks.map((task, i) => `
+                <div class="task-box">
+                    <div class="flex-between" style="margin-bottom:12px">
+                        <strong style="color:#16a34a;font-size:18px">Tâche ${i+1}</strong>
+                        ${tasks.length > 1 ? `<button class="btn-danger" onclick="removeTask(${i})">🗑️</button>` : ''}
+                    </div>
+                    <textarea rows="2" placeholder="Description de la tâche" onchange="updateTask(${i}, 'description', this.value)">${task.description||''}</textarea>
+                    <div class="material-box">
+                        <div class="flex-between" style="margin-bottom:12px">
+                            <strong style="color:#15803d">Matériaux utilisés</strong>
+                            <button class="btn-success" style="padding:6px 12px;font-size:14px" onclick="addMaterial(${i})">➕</button>
+                        </div>
+                        ${(task.materials || [{}]).map((mat, mi) => `
+                            <div class="material-item">
+                                <select onchange="updateMaterial(${i}, ${mi}, 'type', this.value)">
+                                    <option value="">Matériau</option>
+                                    ${materials.map(m => `<option ${mat.type===m?'selected':''}>${m}</option>`).join('')}
+                                </select>
+                                <input type="number" step="0.01" placeholder="Qté" value="${mat.quantity||''}" onchange="updateMaterial(${i}, ${mi}, 'quantity', this.value)">
+                                <select onchange="updateMaterial(${i}, ${mi}, 'unit', this.value)">
+                                    <option ${mat.unit==='ml'?'selected':''}>ml</option>
+                                    <option ${mat.unit==='m3'||!mat.unit?'selected':''}>m³</option>
+                                    <option ${mat.unit==='m2'?'selected':''}>m²</option>
+                                    <option ${mat.unit==='unité'?'selected':''}>unité</option>
+                                </select>
+                                <select onchange="updateMaterial(${i}, ${mi}, 'origin', this.value)">
+                                    <option value="">Provenance</option>
+                                    ${origins.map(o => `<option ${mat.origin===o?'selected':''}>${o}</option>`).join('')}
+                                </select>
+                                ${task.materials.length > 1 ? `<button class="btn-danger" onclick="removeMaterial(${i}, ${mi})">🗑️</button>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addTask() { tasks.push({materials: [{}]}); renderTasks(); }
+        function removeTask(i) { tasks.splice(i, 1); renderTasks(); }
+        function updateTask(i, field, value) { tasks[i][field] = value; }
+        function addMaterial(taskIdx) { tasks[taskIdx].materials.push({}); renderTasks(); }
+        function removeMaterial(taskIdx, matIdx) { tasks[taskIdx].materials.splice(matIdx, 1); renderTasks(); }
+        function updateMaterial(taskIdx, matIdx, field, value) { tasks[taskIdx].materials[matIdx][field] = value; }
+
+        function resetForm() {
+            if (confirm('Réinitialiser tout le formulaire ?')) {
+                document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('chiefName').value = '';
+                document.getElementById('siteAddress').value = '';
+                document.getElementById('weather').value = 'Ensoleillé';
+                document.getElementById('otherEquipment').value = '';
+                document.getElementById('safetyNotes').value = '';
+                document.getElementById('photoCount').value = '0';
+                document.getElementById('signature').value = '';
+                tasks = [{materials: [{}]}];
+                selectedEquipment = [];
+                renderTasks();
+                renderEquipmentGrid();
+            }
+        }
+
+        function generateEmailBody(data) {
+            let body = 'RAPPORT DE CHANTIER JOURNALIER\n\n';
+            body += `Date: ${data.date}\nChef: ${data.chiefName}\nAdresse: ${data.siteAddress}\nMétéo: ${data.weather}\n\n`;
+            body += 'TÂCHES:\n' + '='.repeat(60) + '\n\n';
+            data.tasks.forEach((task, i) => {
+                if (task.description) {
+                    body += `${i+1}. ${task.description}\n`;
+                    if (task.materials) {
+                        body += '   Matériaux:\n';
+                        task.materials.forEach(mat => {
+                            if (mat.type) {
+                                body += `   - ${mat.type}`;
+                                if (mat.quantity) body += `: ${mat.quantity} ${mat.unit||''}`;
+                                if (mat.origin) body += ` (${mat.origin})`;
+                                body += '\n';
+                            }
+                        });
+                    }
+                    body += '\n';
+                }
+            });
+            if (data.equipment.length > 0 || data.otherEquipment) {
+                body += '\nMATÉRIEL EN LOCATION:\n' + '='.repeat(60) + '\n';
+                data.equipment.forEach(eq => body += `• ${eq}\n`);
+                if (data.otherEquipment) body += `• Autre: ${data.otherEquipment}\n`;
+                body += '\n';
+            }
+            if (data.safetyNotes) body += `\nINFORMATIONS ET SÉCURITÉ:\n${'='.repeat(60)}\n${data.safetyNotes}\n\n`;
+            if (data.photoCount > 0) body += `\n📷 PHOTOS: ${data.photoCount} photo(s) à joindre\n\n`;
+            if (data.signature) body += `\nSignature: ${data.signature}\n`;
+            return body;
+        }
+
+        function saveReport() {
+            const data = {
+                date: document.getElementById('date').value,
+                chiefName: document.getElementById('chiefName').value,
+                siteAddress: document.getElementById('siteAddress').value,
+                weather: document.getElementById('weather').value,
+                tasks: tasks,
+                equipment: selectedEquipment,
+                otherEquipment: document.getElementById('otherEquipment').value,
+                safetyNotes: document.getElementById('safetyNotes').value,
+                photoCount: document.getElementById('photoCount').value,
+                signature: document.getElementById('signature').value,
+                savedAt: new Date().toISOString(),
+                id: Date.now()
+            };
+            if (!data.chiefName || !data.siteAddress || !data.signature) {
+                alert('⚠️ Remplissez les champs obligatoires (Chef, Adresse, Signature)');
+                return;
+            }
+            const saved = JSON.parse(localStorage.getItem('savedReports') || '[]');
+            saved.push(data);
+            localStorage.setItem('savedReports', JSON.stringify(saved));
+            alert('✅ Rapport sauvegardé !\n\nDisponible pour envoi avec WiFi.');
+            resetForm();
+            updateStatus();
+            loadSavedReports();
+        }
+
+        function loadSavedReports() {
+            const saved = JSON.parse(localStorage.getItem('savedReports') || '[]');
+            const list = document.getElementById('savedReportsList');
+            if (saved.length === 0) {
+                list.classList.add('hidden');
+                return;
+            }
+            list.innerHTML = `
+                <div class="flex-between" style="margin-bottom:16px">
+                    <h2>Rapports en attente</h2>
+                    ${isOnline ? `<button class="btn-success" onclick="syncAll()">⬆️ Tout synchroniser</button>` : ''}
+                </div>
+                ${saved.map(r => `
+                    <div class="report-item">
+                        <div>
+                            <strong>${r.chiefName} - ${r.date}</strong><br>
+                            <span style="font-size:14px;color:#6b7280">${r.siteAddress}</span><br>
+                            <span style="font-size:12px;color:#9ca3af">Sauvegardé: ${new Date(r.savedAt).toLocaleString('fr-FR')}</span>
+                        </div>
+                        <div>
+                            ${isOnline ? `<button class="btn-primary" onclick="sendReport(${r.id})">📧</button>` : ''}
+                            <button class="btn-danger" onclick="deleteReport(${r.id})">🗑️</button>
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function toggleSavedReports() {
+            document.getElementById('savedReportsList').classList.toggle('hidden');
+            updateStatus();
+        }
+
+        function sendReport(id) {
+            const saved = JSON.parse(localStorage.getItem('savedReports') || '[]');
+            const report = saved.find(r => r.id === id);
+            if (!report) return;
+            const subject = encodeURIComponent(`Rapport chantier - ${report.chiefName} - ${report.date}`);
+            const body = encodeURIComponent(generateEmailBody(report));
+            window.location.href = `mailto:feldner.guillaume@feldner-reseaux.fr?subject=${subject}&body=${body}`;
+        }
+
+        function deleteReport(id) {
+            if (confirm('Supprimer ce rapport ?')) {
+                const saved = JSON.parse(localStorage.getItem('savedReports') || '[]');
+                localStorage.setItem('savedReports', JSON.stringify(saved.filter(r => r.id !== id)));
+                loadSavedReports();
+                updateStatus();
+            }
+        }
+
+        function syncAll() {
+            if (!isOnline) {
+                alert('❌ Pas de connexion Internet');
+                return;
+            }
+            const saved = JSON.parse(localStorage.getItem('savedReports') || '[]');
+            if (saved.length === 0) {
+                alert('Aucun rapport en attente');
+                return;
+            }
+            if (confirm(`Envoyer ${saved.length} rapport(s) ?`)) {
+                saved.forEach((r, i) => setTimeout(() => sendReport(r.id), i * 1000));
+                setTimeout(() => {
+                    if (confirm('Supprimer les rapports synchronisés ?')) {
+                        localStorage.removeItem('savedReports');
+                        loadSavedReports();
+                        updateStatus();
+                    }
+                }, saved.length * 1000 + 500);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
